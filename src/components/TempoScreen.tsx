@@ -1,3 +1,4 @@
+import { Play, Pause, Plus, Minus } from 'lucide-react';
 import type { BeatState } from '../audio/MetronomeEngine';
 import { Dial } from './Dial';
 import { P, hexA, tempoTerm, PRESET_DEFS } from '../types';
@@ -21,7 +22,7 @@ export function TempoScreen({
   onBpmChange, onNudge, onTogglePlay, onCycleBeat, onTap,
 }: Props) {
   return (
-    <div className="flex-1 flex flex-col min-h-0" style={{ padding: '10px 22px 4px', gap: 6 }}>
+    <div className="flex-1 flex flex-col min-h-0" style={{ padding: '10px 22px 10px', gap: 16 }}>
       {/* header */}
       <div className="flex items-center justify-between">
         <span style={{ fontSize: 12, letterSpacing: '.24em', color: P.muted, fontWeight: 700 }}>TEMPO</span>
@@ -46,7 +47,8 @@ export function TempoScreen({
           const hot = isAcc ? P.amber : P.accent;
 
           const style: React.CSSProperties = {
-            flex: '1 1 0', height: 30, borderRadius: 999, cursor: 'pointer',
+            flex: '1 1 0', height: 100, borderRadius: 16
+            , cursor: 'pointer',
             transition: 'all .09s ease', boxSizing: 'border-box',
           };
           if (muted) {
@@ -68,33 +70,33 @@ export function TempoScreen({
       </div>
 
       {/* transport */}
-      <div className="flex items-center justify-center gap-[18px]" style={{ padding: '4px 0' }}>
-        <div onClick={() => onNudge(-1)} className="flex items-center justify-center cursor-pointer select-none"
+      <div className="flex items-center gap-3" style={{ padding: '4px 0' }}>
+        <div onClick={() => onNudge(-1)} className="flex items-center justify-center cursor-pointer select-none flex-shrink-0"
              style={{
-               width: 52, height: 52, borderRadius: '50%', background: P.surface,
+               width: 52, height: 52, borderRadius: 14, background: P.surface,
                border: `1px solid ${P.line}`, boxShadow: `0 2px 0 ${P.edge}`,
-               fontSize: 26, color: P.text,
-             }}>−</div>
-        <div onClick={onTogglePlay} className="flex items-center justify-center cursor-pointer"
-             style={{
-               width: 74, height: 74, borderRadius: '50%', background: P.amber,
-               boxShadow: `0 3px 0 #8a5c1d, 0 14px 28px rgba(189,130,48,.38)`,
              }}>
-          {playing ? (
-            <div className="flex gap-[6px]">
-              <div style={{ width: 7, height: 24, borderRadius: 2, background: '#fff' }} />
-              <div style={{ width: 7, height: 24, borderRadius: 2, background: '#fff' }} />
-            </div>
-          ) : (
-            <div style={{ width: 0, height: 0, borderTop: '12px solid transparent', borderBottom: '12px solid transparent', borderLeft: '20px solid #fff', marginLeft: 5 }} />
-          )}
+          <Minus size={22} color={P.text} strokeWidth={2} />
         </div>
-        <div onClick={() => onNudge(1)} className="flex items-center justify-center cursor-pointer select-none"
+        <div onClick={onTogglePlay} className="flex-1 flex items-center justify-center gap-2 cursor-pointer"
              style={{
-               width: 52, height: 52, borderRadius: '50%', background: P.surface,
+               height: 52, borderRadius: 13, background: P.amber,
+               boxShadow: `0 3px 0 #8a5c1d, 0 8px 20px rgba(189,130,48,.35)`,
+             }}>
+          {playing
+            ? <Pause size={18} color="#fff" fill="#fff" />
+            : <Play size={18} color="#fff" fill="#fff" />}
+          <span style={{ color: '#fff', fontWeight: 700, fontSize: 15, letterSpacing: '.1em' }}>
+            {playing ? 'PAUSE' : 'START'}
+          </span>
+        </div>
+        <div onClick={() => onNudge(1)} className="flex items-center justify-center cursor-pointer select-none flex-shrink-0"
+             style={{
+               width: 52, height: 52, borderRadius: 14, background: P.surface,
                border: `1px solid ${P.line}`, boxShadow: `0 2px 0 ${P.edge}`,
-               fontSize: 26, color: P.text,
-             }}>+</div>
+             }}>
+          <Plus size={22} color={P.text} strokeWidth={2} />
+        </div>
       </div>
 
       {/* presets */}
@@ -104,15 +106,12 @@ export function TempoScreen({
           return (
             <div key={p.bpm} onClick={() => onBpmChange(p.bpm)} className="cursor-pointer select-none"
                  style={{
-                   flex: '1 1 0', padding: '10px 6px', textAlign: 'center', borderRadius: 11,
+                   flex: '1 1 0', padding: '10px 6px', textAlign: 'center',
                    fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap',
-                   border: `1px solid ${active ? 'transparent' : P.line}`,
-                   background: active ? P.accent : P.surface,
-                   color: active ? '#fff' : P.text,
-                   boxShadow: active ? '0 2px 0 #0a5e55' : `0 2px 0 ${P.edge}`,
-                   transition: 'all .12s',
+                   color: active ? P.accent : P.text,
+                   transition: 'color .12s',
                  }}>
-              {p.label} {p.bpm}
+              {p.label}
             </div>
           );
         })}
@@ -121,10 +120,9 @@ export function TempoScreen({
       {/* tap tempo */}
       <div onClick={onTap} className="cursor-pointer select-none"
            style={{
-             textAlign: 'center', padding: '13px 0', borderRadius: 13,
+             textAlign: 'center', padding: '16px 0', borderRadius: 13,
              background: P.surface, border: `1px solid ${P.line}`, boxShadow: `0 2px 0 ${P.edge}`,
              fontWeight: 700, letterSpacing: '.16em', fontSize: 13, color: P.text,
-             marginBlock: 8,
            }}>
         TAP TEMPO
       </div>
