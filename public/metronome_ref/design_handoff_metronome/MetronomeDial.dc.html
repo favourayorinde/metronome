@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  input[type=range] { -webkit-appearance: none; appearance: none; background: transparent; }
+  input[type=range]::-webkit-slider-runnable-track { height: 6px; border-radius: 999px; background: var(--idle); box-shadow: inset 0 1px 2px rgba(50,38,14,.22); }
+  input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; width: 22px; height: 22px; border-radius: 50%; background: linear-gradient(155deg,#fbf6ea,#e3d9c2); border: 1px solid rgba(50,38,14,.2); margin-top: -8px; box-shadow: 0 3px 6px rgba(50,38,14,.28); cursor: pointer; }
+</style>
+</helmet>
+
+<div style="{{ rootStyle }}">
+
+  <!-- status bar -->
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:11px 22px 2px;font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.04em;color:var(--muted);flex:0 0 auto;">
+    <span>9:41</span>
+    <div style="display:flex;align-items:center;gap:7px;">
+      <span>METRONOME</span>
+      <div style="width:22px;height:11px;border:1px solid var(--muted);border-radius:3px;padding:1.5px;display:flex;"><div style="flex:1;background:var(--muted);border-radius:1px;"></div></div>
+    </div>
+  </div>
+
+  <!-- ============ TEMPO (dial home) ============ -->
+  <sc-if value="{{ isTempo }}" hint-placeholder-val="{{ true }}">
+  <div style="flex:1;display:flex;flex-direction:column;padding:10px 22px 4px;gap:6px;min-height:0;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:12px;letter-spacing:.24em;color:var(--muted);font-weight:700;">TEMPO</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);border:1px solid var(--line);padding:4px 11px;border-radius:999px;">{{ sigLabel }}</span>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-height:0;">
+      <div onPointerDown="{{ knobDown }}" style="position:relative;width:224px;height:224px;cursor:grab;touch-action:none;user-select:none;">
+        <sc-for list="{{ dialTicks }}" as="t" hint-placeholder-count="12"><div style="{{ t.style }}"></div></sc-for>
+        <div style="{{ knobStyle }}">
+          <div style="position:absolute;top:9px;left:50%;transform:translateX(-50%);width:6px;height:20px;border-radius:3px;background:var(--accent);"></div>
+        </div>
+        <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;pointer-events:none;">
+          <span style="font-family:'JetBrains Mono',monospace;font-size:44px;font-weight:600;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums;">{{ bpmText }}</span>
+          <span style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.18em;margin-top:4px;">BPM</span>
+        </div>
+      </div>
+      <span style="font-size:14px;color:var(--muted);">{{ tempoTerm }} — drag the dial</span>
+    </div>
+    <div style="display:flex;gap:8px;align-items:flex-end;">
+      <sc-for list="{{ segs }}" as="seg" hint-placeholder-count="4"><div style="{{ seg.style }}" onClick="{{ seg.onClick }}"></div></sc-for>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:center;gap:18px;padding:4px 0;">
+      <div onClick="{{ dec }}" style="width:52px;height:52px;border-radius:50%;background:var(--surface);border:1px solid var(--line);box-shadow:0 2px 0 var(--edge);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;color:var(--text);user-select:none;">−</div>
+      <div onClick="{{ togglePlay }}" style="width:74px;height:74px;border-radius:50%;background:var(--amber);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 3px 0 #8a5c1d,0 14px 28px rgba(189,130,48,.38);">
+        <sc-if value="{{ playing }}" hint-placeholder-val="{{ false }}"><div style="display:flex;gap:6px;"><div style="width:7px;height:24px;border-radius:2px;background:#fff;"></div><div style="width:7px;height:24px;border-radius:2px;background:#fff;"></div></div></sc-if>
+        <sc-if value="{{ notPlaying }}" hint-placeholder-val="{{ true }}"><div style="width:0;height:0;border-top:12px solid transparent;border-bottom:12px solid transparent;border-left:20px solid #fff;margin-left:5px;"></div></sc-if>
+      </div>
+      <div onClick="{{ inc }}" style="width:52px;height:52px;border-radius:50%;background:var(--surface);border:1px solid var(--line);box-shadow:0 2px 0 var(--edge);display:flex;align-items:center;justify-content:center;font-size:26px;cursor:pointer;color:var(--text);user-select:none;">+</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <sc-for list="{{ presets }}" as="p" hint-placeholder-count="4"><div onClick="{{ p.onClick }}" style="{{ p.style }}">{{ p.label }}</div></sc-for>
+    </div>
+    <div onClick="{{ tap }}" style="text-align:center;padding:13px 0;border-radius:13px;background:var(--surface);border:1px solid var(--line);box-shadow:0 2px 0 var(--edge);cursor:pointer;font-weight:700;letter-spacing:.16em;font-size:13px;color:var(--text);user-select:none;">TAP TEMPO</div>
+  </div>
+  </sc-if>
+
+  <!-- ============ RHYTHM ============ -->
+  <sc-if value="{{ isRhythm }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;display:flex;flex-direction:column;padding:10px 20px 4px;gap:12px;min-height:0;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:12px;letter-spacing:.24em;color:var(--muted);font-weight:700;">RHYTHM</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);border:1px solid var(--line);padding:4px 11px;border-radius:999px;">{{ sigLabel }}</span>
+    </div>
+    <div style="border-radius:18px;background:var(--well);box-shadow:inset 0 3px 8px rgba(50,38,14,.16);padding:14px 16px 13px;display:flex;flex-direction:column;gap:11px;">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;">
+        <span style="font-size:11px;letter-spacing:.16em;color:var(--muted);font-weight:700;">BEAT MAP</span>
+        <span style="font-size:11.5px;color:var(--muted);">tap a bar · accent → mute → normal</span>
+      </div>
+      <div style="display:flex;gap:8px;align-items:flex-end;height:112px;">
+        <sc-for list="{{ beatCells }}" as="c" hint-placeholder-count="4">
+          <div onClick="{{ c.onClick }}" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:7px;cursor:pointer;">
+            <div style="{{ c.cellStyle }}"></div>
+            <span style="{{ c.numStyle }}">{{ c.num }}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <span style="font-size:11px;letter-spacing:.16em;color:var(--muted);font-weight:700;">TIME SIGNATURE</span>
+      <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:7px;">
+        <sc-for list="{{ sigChips }}" as="c" hint-placeholder-count="6"><div onClick="{{ c.onClick }}" style="{{ c.style }}">{{ c.label }}</div></sc-for>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <span style="font-size:11px;letter-spacing:.16em;color:var(--muted);font-weight:700;">SUBDIVISION</span>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:7px;">
+        <sc-for list="{{ subChips }}" as="c" hint-placeholder-count="4"><div onClick="{{ c.onClick }}" style="{{ c.style }}">{{ c.label }}</div></sc-for>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ============ SOUND ============ -->
+  <sc-if value="{{ isSound }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;display:flex;flex-direction:column;padding:10px 20px 4px;gap:12px;min-height:0;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:12px;letter-spacing:.24em;color:var(--muted);font-weight:700;">SOUND</span>
+      <span style="font-size:12px;color:var(--muted);">tap to preview</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px;">
+      <sc-for list="{{ soundCards }}" as="c" hint-placeholder-count="5">
+        <div onClick="{{ c.onClick }}" style="{{ c.style }}">
+          <div style="display:flex;flex-direction:column;gap:2px;">
+            <span style="{{ c.nameStyle }}">{{ c.label }}</span>
+            <span style="{{ c.descStyle }}">{{ c.desc }}</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:3px;height:18px;">
+            <sc-for list="{{ c.bars }}" as="b" hint-placeholder-count="5"><div style="{{ b.style }}"></div></sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <div style="border-radius:16px;background:var(--well);box-shadow:inset 0 3px 8px rgba(50,38,14,.16);padding:13px 16px;display:flex;flex-direction:column;gap:9px;">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;">
+        <span style="font-size:11px;letter-spacing:.16em;color:var(--muted);font-weight:700;">VOLUME</span>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--text);">{{ volPct }}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div style="width:5px;height:5px;border-radius:50%;background:var(--muted);flex:0 0 auto;"></div>
+        <input type="range" min="0" max="100" step="1" value="{{ volNum }}" onChange="{{ onVol }}" style="flex:1 1 0;height:22px;cursor:pointer;"/>
+        <div style="width:11px;height:11px;border-radius:50%;background:var(--muted);flex:0 0 auto;"></div>
+      </div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ============ TRAIN ============ -->
+  <sc-if value="{{ isTrain }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:1;display:flex;flex-direction:column;padding:10px 20px 4px;gap:11px;min-height:0;">
+    <div style="display:flex;align-items:center;justify-content:space-between;">
+      <span style="font-size:12px;letter-spacing:.24em;color:var(--muted);font-weight:700;">TRAIN</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);border:1px solid var(--line);padding:4px 11px;border-radius:999px;">{{ sigLabel }}</span>
+    </div>
+    <div style="border-radius:16px;background:var(--surface);border:1px solid var(--line);box-shadow:0 2px 0 var(--edge);padding:14px 16px;display:flex;align-items:center;justify-content:space-between;">
+      <div style="display:flex;flex-direction:column;gap:2px;">
+        <span style="font-size:15px;font-weight:700;">Count-in</span>
+        <span style="font-size:12px;color:var(--muted);">Empty bars before the click</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;">
+        <div onClick="{{ ciDec }}" style="width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--surface);box-shadow:0 2px 0 var(--edge);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;user-select:none;color:var(--text);">−</div>
+        <span style="font-family:'JetBrains Mono',monospace;font-size:15px;min-width:52px;text-align:center;">{{ countInLabel }}</span>
+        <div onClick="{{ ciInc }}" style="width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--surface);box-shadow:0 2px 0 var(--edge);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;user-select:none;color:var(--text);">+</div>
+      </div>
+    </div>
+    <div style="border-radius:16px;background:var(--surface);border:1px solid var(--line);box-shadow:0 2px 0 var(--edge);padding:14px 16px;display:flex;flex-direction:column;gap:11px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div style="display:flex;flex-direction:column;gap:2px;">
+          <span style="font-size:15px;font-weight:700;">Gradual tempo</span>
+          <span style="font-size:12px;color:var(--muted);">{{ rampLabel }}</span>
+        </div>
+        <div onClick="{{ toggleRamp }}" style="{{ rampTrackStyle }}"><div style="{{ rampKnobStyle }}"></div></div>
+      </div>
+      <sc-if value="{{ ramp }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding-top:11px;">
+          <span style="font-size:11px;letter-spacing:.16em;color:var(--muted);font-weight:700;">TARGET BPM</span>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div onClick="{{ rampDec }}" style="width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--surface);box-shadow:0 2px 0 var(--edge);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;user-select:none;color:var(--text);">−</div>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:15px;min-width:46px;text-align:center;">{{ rampEnd }}</span>
+            <div onClick="{{ rampInc }}" style="width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--surface);box-shadow:0 2px 0 var(--edge);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;user-select:none;color:var(--text);">+</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding-top:11px;">
+          <span style="font-size:11px;letter-spacing:.16em;color:var(--muted);font-weight:700;">RAISE BY</span>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div onClick="{{ stepDec }}" style="width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--surface);box-shadow:0 2px 0 var(--edge);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;user-select:none;color:var(--text);">−</div>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:15px;min-width:46px;text-align:center;">{{ rampStepLabel }}</span>
+            <div onClick="{{ stepInc }}" style="width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--surface);box-shadow:0 2px 0 var(--edge);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;user-select:none;color:var(--text);">+</div>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--line);padding-top:11px;">
+          <span style="font-size:11px;letter-spacing:.16em;color:var(--muted);font-weight:700;">EVERY</span>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <div onClick="{{ barsDec }}" style="width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--surface);box-shadow:0 2px 0 var(--edge);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;user-select:none;color:var(--text);">−</div>
+            <span style="font-family:'JetBrains Mono',monospace;font-size:15px;min-width:46px;text-align:center;">{{ rampBarsLabel }}</span>
+            <div onClick="{{ barsInc }}" style="width:36px;height:36px;border-radius:10px;border:1px solid var(--line);background:var(--surface);box-shadow:0 2px 0 var(--edge);display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;user-select:none;color:var(--text);">+</div>
+          </div>
+        </div>
+      </sc-if>
+    </div>
+    <div style="flex:1;border-radius:16px;background:var(--well);box-shadow:inset 0 3px 8px rgba(50,38,14,.16);padding:16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-height:0;">
+      <span style="font-size:11px;letter-spacing:.16em;color:var(--muted);font-weight:700;">BARS THIS SESSION</span>
+      <span style="font-family:'JetBrains Mono',monospace;font-size:60px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums;color:var(--text);">{{ barsText }}</span>
+      <span style="font-size:12.5px;color:var(--muted);">{{ sessionHint }}</span>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ============ mini transport (non-home screens) ============ -->
+  <sc-if value="{{ showMini }}" hint-placeholder-val="{{ false }}">
+  <div style="flex:0 0 auto;display:flex;align-items:center;gap:14px;padding:10px 20px;border-top:1px solid var(--line);">
+    <div onClick="{{ togglePlay }}" style="width:52px;height:52px;border-radius:50%;background:var(--amber);display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;box-shadow:0 3px 0 #8a5c1d,0 8px 18px rgba(189,130,48,.34);">
+      <sc-if value="{{ playing }}" hint-placeholder-val="{{ false }}"><div style="display:flex;gap:5px;"><div style="width:6px;height:20px;border-radius:2px;background:#fff;"></div><div style="width:6px;height:20px;border-radius:2px;background:#fff;"></div></div></sc-if>
+      <sc-if value="{{ notPlaying }}" hint-placeholder-val="{{ true }}"><div style="width:0;height:0;border-top:10px solid transparent;border-bottom:10px solid transparent;border-left:17px solid #fff;margin-left:3px;"></div></sc-if>
+    </div>
+    <div onClick="{{ goTempo }}" style="flex:1;display:flex;flex-direction:column;gap:1px;cursor:pointer;">
+      <div style="display:flex;align-items:baseline;gap:7px;">
+        <span style="font-family:'JetBrains Mono',monospace;font-size:30px;font-weight:600;line-height:1;font-variant-numeric:tabular-nums;">{{ bpmText }}</span>
+        <span style="font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.1em;">BPM</span>
+      </div>
+      <span style="font-size:12px;color:var(--muted);">{{ tempoTerm }}</span>
+    </div>
+    <div style="display:flex;gap:9px;flex:0 0 auto;">
+      <div onClick="{{ dec }}" style="width:42px;height:42px;border-radius:11px;background:var(--surface);border:1px solid var(--line);box-shadow:0 2px 0 var(--edge);display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;color:var(--text);user-select:none;">−</div>
+      <div onClick="{{ inc }}" style="width:42px;height:42px;border-radius:11px;background:var(--surface);border:1px solid var(--line);box-shadow:0 2px 0 var(--edge);display:flex;align-items:center;justify-content:center;font-size:22px;cursor:pointer;color:var(--text);user-select:none;">+</div>
+    </div>
+  </div>
+  </sc-if>
+
+  <!-- ============ tab bar ============ -->
+  <div style="flex:0 0 auto;display:flex;border-top:1px solid var(--line);background:var(--surface);">
+    <sc-for list="{{ tabs }}" as="t" hint-placeholder-count="4">
+      <div onClick="{{ t.onClick }}" style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;padding:11px 0 16px;cursor:pointer;position:relative;">
+        <div style="{{ t.barStyle }}"></div>
+        <div style="{{ t.dotStyle }}"></div>
+        <span style="{{ t.labelStyle }}">{{ t.label }}</span>
+      </div>
+    </sc-for>
+  </div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:320,&quot;height&quot;:680},&quot;screen&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;tempo&quot;,&quot;rhythm&quot;,&quot;sound&quot;,&quot;train&quot;],&quot;default&quot;:&quot;tempo&quot;,&quot;tsType&quot;:&quot;'tempo'|'rhythm'|'sound'|'train'&quot;}}">
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      bpm: 120, playing: false, beatsPerBar: 4, noteValue: 4, subdiv: 1, sound: 'click',
+      beatStates: ['accent', 'normal', 'normal', 'normal'], currentBeat: -1,
+      screen: props.screen || 'tempo', taps: [], countIn: 1, ramp: false, rampEnd: 160, rampStep: 2, rampBars: 2,
+      volume: 0.9, accentFirst: true, barsPlayed: 0,
+    };
+    this.engine = null;
+  }
+
+  async componentDidMount() {
+    try {
+      const mod = await import('./MetronomeEngine.js');
+      const e = new mod.MetronomeEngine();
+      e.bpm = this.state.bpm; e.beatsPerBar = this.state.beatsPerBar;
+      e.subdiv = this.state.subdiv; e.sound = this.state.sound;
+      e.beatStates = this.state.beatStates.slice();
+      e.accentFirst = this.state.accentFirst; e.setVolume(this.state.volume);
+      e.onBeat = (beat) => { this.setState({ currentBeat: beat }); };
+      this.engine = e;
+      this._poll = setInterval(() => {
+        if (this.engine && this.engine.playing && this.engine.barCount !== this.state.barsPlayed) {
+          const bars = this.engine.barCount, s = this.state;
+          const upd = { barsPlayed: bars };
+          if (s.ramp && bars > 0 && bars % s.rampBars === 0 && bars !== this._rampedAt && s.bpm < s.rampEnd) {
+            this._rampedAt = bars;
+            upd.bpm = Math.min(s.rampEnd, s.bpm + s.rampStep);
+            this.engine.bpm = upd.bpm;
+          }
+          this.setState(upd);
+        }
+      }, 200);
+    } catch (err) { console.error('engine load failed', err); }
+  }
+  componentWillUnmount() { if (this.engine) this.engine.stop(); if (this._poll) clearInterval(this._poll); }
+
+  palette() {
+    return {
+      bg: '#ece5d7', text: '#241d12', muted: '#8c8270', accent: '#0f9a8a', amber: '#bd8230',
+      idle: '#ddd2bd', line: 'rgba(50,38,14,.16)', surface: '#f7f2e7',
+      well: '#e0d7c2', edge: 'rgba(50,38,14,.20)',
+    };
+  }
+  hexA(hex, a) {
+    const h = hex.replace('#', '');
+    const r = parseInt(h.substring(0, 2), 16), g = parseInt(h.substring(2, 4), 16), b = parseInt(h.substring(4, 6), 16);
+    return 'rgba(' + r + ',' + g + ',' + b + ',' + a + ')';
+  }
+  tempoTerm(bpm) {
+    if (bpm <= 60) return 'Largo';
+    if (bpm <= 76) return 'Adagio';
+    if (bpm <= 108) return 'Andante';
+    if (bpm <= 120) return 'Moderato';
+    if (bpm <= 156) return 'Allegro';
+    if (bpm <= 176) return 'Vivace';
+    return 'Presto';
+  }
+
+  setBpm = (v) => {
+    v = Math.max(20, Math.min(300, Math.round(v)));
+    if (this.engine) this.engine.bpm = v;
+    this.setState({ bpm: v });
+  };
+  nudge = (d) => this.setBpm(this.state.bpm + d);
+  togglePlay = () => {
+    if (!this.engine) return;
+    const playing = this.engine.toggle();
+    if (playing) this._rampedAt = 0;
+    this.setState({ playing, currentBeat: playing ? this.state.currentBeat : -1, barsPlayed: playing ? 0 : this.state.barsPlayed });
+  };
+  tap = () => {
+    const now = performance.now();
+    let taps = this.state.taps.filter((t) => now - t < 2000);
+    taps.push(now);
+    if (taps.length >= 2) {
+      let sum = 0;
+      for (let i = 1; i < taps.length; i++) sum += taps[i] - taps[i - 1];
+      const avg = sum / (taps.length - 1);
+      const bpm = Math.max(20, Math.min(300, Math.round(60000 / avg)));
+      if (this.engine) this.engine.bpm = bpm;
+      this.setState({ taps, bpm });
+    } else {
+      this.setState({ taps });
+    }
+  };
+  setSig = (n, v) => {
+    if (this.engine) this.engine.setBeatsPerBar(n);
+    const states = this.engine ? this.engine.beatStates.slice() : this.state.beatStates;
+    this.setState({ beatsPerBar: n, noteValue: v, beatStates: states, currentBeat: -1 });
+  };
+  setSubdiv = (s) => { if (this.engine) this.engine.subdiv = s; this.setState({ subdiv: s }); };
+  setSound = (s) => { if (this.engine) { this.engine.sound = s; this.engine.preview(); } this.setState({ sound: s }); };
+  cycleBeat = (i) => {
+    const order = { normal: 'mute', mute: 'accent', accent: 'normal' };
+    const states = this.state.beatStates.slice();
+    states[i] = order[states[i] || 'normal'];
+    if (this.engine) this.engine.beatStates = states.slice();
+    this.setState({ beatStates: states });
+  };
+  setScreen = (t) => this.setState({ screen: t });
+  applyPreset = (b) => this.setBpm(b);
+  setCountIn = (n) => this.setState({ countIn: Math.max(0, Math.min(8, n)) });
+  toggleRamp = () => this.setState({ ramp: !this.state.ramp });
+  setRampEnd = (n) => this.setState({ rampEnd: Math.max(this.state.bpm, Math.min(300, n)) });
+  setRampStep = (n) => this.setState({ rampStep: Math.max(1, Math.min(20, n)) });
+  setRampBars = (n) => this.setState({ rampBars: Math.max(1, Math.min(16, n)) });
+  setVolume = (v) => { v = Math.max(0, Math.min(1, v)); if (this.engine) this.engine.setVolume(v); this.setState({ volume: v }); };
+
+  knobDown = (e) => {
+    e.preventDefault();
+    const r = e.currentTarget.getBoundingClientRect();
+    const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
+    let last = Math.atan2(e.clientY - cy, e.clientX - cx);
+    let acc = this.state.bpm;
+    const move = (ev) => {
+      const a = Math.atan2(ev.clientY - cy, ev.clientX - cx);
+      let d = a - last;
+      if (d > Math.PI) d -= 2 * Math.PI;
+      if (d < -Math.PI) d += 2 * Math.PI;
+      last = a;
+      acc += (d * 180 / Math.PI) / 270 * 280;
+      acc = Math.max(20, Math.min(300, acc));
+      this.setBpm(acc);
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+    };
+    window.addEventListener('pointermove', move);
+    window.addEventListener('pointerup', up);
+  };
+
+  renderVals() {
+    const s = this.state;
+    const p = this.palette();
+    const playing = s.playing;
+    const screen = s.screen;
+
+    // --- tempo pill beat segments ---
+    const segs = s.beatStates.map((st, i) => {
+      const active = playing && i === s.currentBeat;
+      const isAcc = st === 'accent';
+      const muted = st === 'mute';
+      const hot = isAcc ? p.amber : p.accent;
+      const style = { flex: '1 1 0', height: '30px', borderRadius: '999px', cursor: 'pointer', transition: 'all .09s ease', boxSizing: 'border-box' };
+      if (muted) { style.background = 'transparent'; style.border = '1.5px dashed ' + this.hexA(p.text, 0.3); }
+      else if (active) { style.background = hot; style.transform = 'translateY(-3px)'; style.boxShadow = '0 8px 18px ' + this.hexA(hot, 0.4); }
+      else { style.background = p.idle; style.boxShadow = isAcc ? ('inset 0 3px 0 ' + this.hexA(p.amber, 0.9)) : 'inset 0 2px 4px rgba(50,38,14,.16)'; }
+      return { i, style, onClick: () => this.cycleBeat(i) };
+    });
+
+    // --- rhythm beat-map cells ---
+    const beatCells = s.beatStates.map((st, i) => {
+      const active = playing && i === s.currentBeat;
+      const isAcc = st === 'accent';
+      const muted = st === 'mute';
+      const hot = isAcc ? p.amber : p.accent;
+      const h = muted ? 66 : isAcc ? 104 : 70;
+      const cellStyle = { width: '100%', height: h + 'px', borderRadius: '12px', transition: 'all .1s ease', boxSizing: 'border-box' };
+      if (muted) { cellStyle.background = 'transparent'; cellStyle.border = '1.5px dashed ' + this.hexA(p.text, 0.3); }
+      else if (active) { cellStyle.background = hot; cellStyle.transform = 'translateY(-4px)'; cellStyle.boxShadow = '0 12px 22px ' + this.hexA(hot, 0.38); }
+      else { cellStyle.background = p.idle; cellStyle.boxShadow = isAcc ? ('inset 0 4px 0 ' + this.hexA(p.amber, 0.9) + ', inset 0 -2px 4px rgba(50,38,14,.1)') : 'inset 0 2px 4px rgba(50,38,14,.14)'; }
+      const numStyle = { fontFamily: "'JetBrains Mono', monospace", fontSize: '12px', fontWeight: 600, color: active ? p.accent : (isAcc ? p.amber : p.muted) };
+      return { num: String(i + 1), cellStyle, numStyle, onClick: () => this.cycleBeat(i) };
+    });
+
+    // --- dial geometry ---
+    const ang = -135 + (s.bpm - 20) / 280 * 270;
+    const dialTicks = [];
+    for (let i = 0; i <= 28; i++) {
+      const ta = -135 + (i / 28) * 270;
+      const major = i % 4 === 0;
+      const on = ta <= ang + 0.01;
+      dialTicks.push({
+        style: {
+          position: 'absolute', left: '50%', top: '50%',
+          width: major ? '3px' : '2px', height: major ? '13px' : '8px', borderRadius: '2px',
+          background: on ? this.hexA(p.accent, major ? 0.95 : 0.65) : this.hexA(p.text, major ? 0.4 : 0.2),
+          transform: 'translate(-50%,-50%) rotate(' + ta + 'deg) translateY(-101px)',
+          transition: 'background .12s ease',
+        },
+      });
+    }
+    const knobStyle = {
+      position: 'absolute', left: '29px', top: '29px', width: '166px', height: '166px', borderRadius: '50%',
+      background: 'linear-gradient(155deg,#fbf6ea,#e3d9c2)',
+      boxShadow: '0 16px 30px rgba(50,38,14,.20), 0 0 0 1px rgba(50,38,14,.18), inset 0 2px 0 rgba(255,255,255,.85), inset 0 -4px 8px rgba(50,38,14,.10)',
+      transform: 'rotate(' + ang + 'deg)',
+    };
+
+    // --- chips ---
+    const mkChip = (active) => ({
+      padding: '10px 6px', textAlign: 'center', borderRadius: '11px', fontSize: '13px',
+      fontWeight: 600, cursor: 'pointer', border: '1px solid ' + (active ? 'transparent' : p.line),
+      background: active ? p.accent : p.surface, color: active ? '#fff' : p.text,
+      boxShadow: active ? '0 2px 0 #0a5e55' : '0 2px 0 ' + p.edge,
+      transition: 'all .12s', userSelect: 'none', whiteSpace: 'nowrap',
+    });
+    const sigDefs = [['4/4', 4, 4], ['3/4', 3, 4], ['6/8', 6, 8], ['5/4', 5, 4], ['7/8', 7, 8], ['2/4', 2, 4]];
+    const sigChips = sigDefs.map(([label, n, v]) => ({ label, style: mkChip(s.beatsPerBar === n && s.noteValue === v), onClick: () => this.setSig(n, v) }));
+    const subDefs = [['Quarter', 1], ['Eighth', 2], ['Triplet', 3], ['16th', 4]];
+    const subChips = subDefs.map(([label, val]) => ({ label, style: mkChip(s.subdiv === val), onClick: () => this.setSubdiv(val) }));
+    const presetDefs = [['Ballad', 72], ['Groove', 96], ['Allegro', 132], ['Drive', 160]];
+    const presets = presetDefs.map(([label, b]) => ({ label, style: { ...mkChip(s.bpm === b), flex: '1 1 0' }, onClick: () => this.applyPreset(b) }));
+
+    // --- sound cards ---
+    const wavePatterns = { click: [3, 16, 4, 3, 3], woodblock: [5, 13, 9, 5, 3], hihat: [8, 10, 7, 10, 8], rim: [3, 6, 15, 6, 3], cowbell: [7, 13, 6, 13, 7] };
+    const soundDefs = [['Click', 'click', 'Pure sine tick'], ['Woodblock', 'woodblock', 'Warm hollow knock'], ['Hi-hat', 'hihat', 'Crisp noise burst'], ['Rim', 'rim', 'Sharp snap'], ['Cowbell', 'cowbell', 'Bright metallic']];
+    const soundCards = soundDefs.map(([label, id, desc]) => {
+      const sel = s.sound === id;
+      const barColor = sel ? 'rgba(255,255,255,.92)' : p.accent;
+      const bars = wavePatterns[id].map((h) => ({ style: { width: '3px', height: h + 'px', borderRadius: '2px', background: barColor } }));
+      return {
+        label, desc, bars,
+        onClick: () => this.setSound(id),
+        style: {
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '11px 15px',
+          borderRadius: '13px', cursor: 'pointer', border: '1px solid ' + (sel ? 'transparent' : p.line),
+          background: sel ? p.accent : p.surface, boxShadow: sel ? '0 2px 0 #0a5e55' : '0 2px 0 ' + p.edge,
+          transition: 'all .12s', userSelect: 'none',
+        },
+        nameStyle: { fontSize: '15px', fontWeight: 700, color: sel ? '#fff' : p.text },
+        descStyle: { fontSize: '11.5px', color: sel ? 'rgba(255,255,255,.7)' : p.muted },
+      };
+    });
+
+    // --- tabs ---
+    const tabDefs = [['tempo', 'Tempo'], ['rhythm', 'Rhythm'], ['sound', 'Sound'], ['train', 'Train']];
+    const tabs = tabDefs.map(([id, label]) => {
+      const active = screen === id;
+      return {
+        label, onClick: () => this.setScreen(id),
+        labelStyle: { fontSize: '12px', fontWeight: 600, color: active ? p.accent : p.muted, letterSpacing: '.01em' },
+        barStyle: { position: 'absolute', top: '0', width: '26px', height: '3px', borderRadius: '0 0 3px 3px', background: active ? p.accent : 'transparent' },
+        dotStyle: { width: '7px', height: '7px', borderRadius: '50%', background: active ? p.accent : this.hexA(p.text, 0.22) },
+      };
+    });
+
+    const rootStyle = {
+      height: '680px', display: 'flex', flexDirection: 'column', background: p.bg, color: p.text,
+      fontFamily: "'Hanken Grotesk', sans-serif", overflow: 'hidden', position: 'relative',
+      '--accent': p.accent, '--amber': p.amber, '--muted': p.muted, '--line': p.line,
+      '--idle': p.idle, '--surface': p.surface, '--text': p.text, '--well': p.well, '--edge': p.edge,
+    };
+    const rampTrackStyle = { width: '46px', height: '26px', borderRadius: '999px', background: s.ramp ? p.accent : p.idle, position: 'relative', cursor: 'pointer', transition: 'all .15s', flex: '0 0 auto', boxShadow: 'inset 0 1px 3px rgba(50,38,14,.2)' };
+    const rampKnobStyle = { position: 'absolute', top: '3px', left: s.ramp ? '23px' : '3px', width: '20px', height: '20px', borderRadius: '50%', background: '#fff', transition: 'all .15s', boxShadow: '0 1px 3px rgba(0,0,0,.3)' };
+
+    const sessionHint = playing ? 'counting…' : (s.barsPlayed > 0 ? 'paused — press play to resume' : 'press play to begin');
+
+    return {
+      rootStyle, rampTrackStyle, rampKnobStyle,
+      isTempo: screen === 'tempo', isRhythm: screen === 'rhythm', isSound: screen === 'sound', isTrain: screen === 'train',
+      showMini: screen !== 'tempo',
+      bpm: s.bpm, bpmText: String(s.bpm), playing, notPlaying: !playing,
+      tempoTerm: this.tempoTerm(s.bpm), sigLabel: s.beatsPerBar + '/' + s.noteValue,
+      segs, beatCells, sigChips, subChips, soundCards, presets, tabs,
+      dialTicks, knobStyle,
+      volNum: Math.round(s.volume * 100), volPct: Math.round(s.volume * 100) + '%',
+      ramp: s.ramp, rampEnd: s.rampEnd,
+      countInLabel: s.countIn + (s.countIn === 1 ? ' bar' : ' bars'),
+      rampLabel: s.bpm + ' → ' + s.rampEnd + ' bpm · +' + s.rampStep + ' every ' + s.rampBars + (s.rampBars === 1 ? ' bar' : ' bars'),
+      barsText: String(s.barsPlayed).padStart(3, '0'), sessionHint,
+      dec: () => this.nudge(-1), inc: () => this.nudge(1),
+      onVol: (e) => this.setVolume(+e.target.value / 100),
+      togglePlay: this.togglePlay, tap: this.tap, toggleRamp: this.toggleRamp,
+      knobDown: this.knobDown, goTempo: () => this.setScreen('tempo'),
+      ciDec: () => this.setCountIn(s.countIn - 1), ciInc: () => this.setCountIn(s.countIn + 1),
+      rampDec: () => this.setRampEnd(s.rampEnd - 4), rampInc: () => this.setRampEnd(s.rampEnd + 4),
+      rampStepLabel: '+' + s.rampStep + ' bpm', rampBarsLabel: s.rampBars + (s.rampBars === 1 ? ' bar' : ' bars'),
+      stepDec: () => this.setRampStep(s.rampStep - 1), stepInc: () => this.setRampStep(s.rampStep + 1),
+      barsDec: () => this.setRampBars(s.rampBars - 1), barsInc: () => this.setRampBars(s.rampBars + 1),
+    };
+  }
+}
+</script>
+</body>
+</html>
